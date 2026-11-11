@@ -1,4 +1,6 @@
 # Proyecto c++
 INTEGRANTES
-Owen Vch
-Ricardo Velasquez  
+-Owen Vch 
+-
+-
+-Ricardo Velasquez  
