@@ -1,1 +1,2 @@
-# Proyecto-c-
+# Proyecto c++
+Owen Vch
