@@ -95,6 +95,186 @@ public:
     }
 };
 
+//Productos del Almacen
+
+// Clase base abstracta de todo lo que se guarda en el almacen
+class Producto
+{
+private:
+    char* codigo;
+    char* nombre;
+    double precio;
+    int stock;
+
+protected:
+    // Imprime los datos comunes; las clases hijas la usan dentro de mostrar()
+    void mostrarDatosBase() const
+    {
+        cout << "[" << tipo() << "] " << codigo
+             << " | " << nombre
+             << " | S/ " << precio
+             << " | Stock: " << stock;
+    }
+
+public:
+    // Un precio o stock negativo se reemplaza por 0
+    Producto(const char* _codigo, const char* _nombre, double _precio, int _stock)
+    {
+        copiarTexto(codigo, _codigo);
+        copiarTexto(nombre, _nombre);
+        precio = (_precio < 0) ? 0 : _precio;
+        stock = (_stock < 0) ? 0 : _stock;
+    }
+
+    // Virtual para que al hacer delete desde un Producto* se libere tambien la clase hija
+    virtual ~Producto()
+    {
+        delete[] codigo;
+        delete[] nombre;
+    }
+
+    // Se prohibe copiar: cada producto es dueno de su memoria y se maneja por puntero
+    Producto(const Producto&) = delete;
+    Producto& operator=(const Producto&) = delete;
+
+    const char* getCodigo() const { return codigo; }
+    const char* getNombre() const { return nombre; }
+    double getPrecio() const { return precio; }
+    int getStock() const { return stock; }
+
+    bool setNombre(const char* nuevo)
+    {
+        if (nuevo[0] == '\0')
+        {
+            return false;
+        }
+        delete[] nombre;
+        copiarTexto(nombre, nuevo);
+        return true;
+    }
+
+    bool setPrecio(double nuevo)
+    {
+        if (nuevo < 0)
+        {
+            return false;
+        }
+        precio = nuevo;
+        return true;
+    }
+
+    bool agregarStock(int cantidad)
+    {
+        if (cantidad <= 0)
+        {
+            return false;
+        }
+        stock += cantidad;
+        return true;
+    }
+
+    bool retirarStock(int cantidad)
+    {
+        if (cantidad <= 0 || cantidad > stock)
+        {
+            return false;
+        }
+        stock -= cantidad;
+        return true;
+    }
+
+    // Dos productos son el mismo si tienen el mismo codigo
+    bool operator==(const Producto& otro) const
+    {
+        return sonIguales(codigo, otro.codigo);
+    }
+
+    // Permite comparar directo contra un codigo: *producto == "MED001"
+    bool operator==(const char* otroCodigo) const
+    {
+        return sonIguales(codigo, otroCodigo);
+    }
+
+    virtual const char* tipo() const = 0;
+    virtual void mostrar() const = 0;
+};
+
+class Medicamento : public Producto
+{
+private:
+    // Texto con formato AAAA-MM-DD
+    char* fechaVencimiento;
+    bool requiereReceta;
+
+public:
+    Medicamento(const char* _codigo, const char* _nombre, double _precio, int _stock,
+                const char* _fechaVencimiento, bool _requiereReceta)
+        : Producto(_codigo, _nombre, _precio, _stock)
+    {
+        copiarTexto(fechaVencimiento, _fechaVencimiento);
+        requiereReceta = _requiereReceta;
+    }
+
+    ~Medicamento() override
+    {
+        delete[] fechaVencimiento;
+    }
+
+    const char* getFechaVencimiento() const { return fechaVencimiento; }
+    bool getRequiereReceta() const { return requiereReceta; }
+
+    void setRequiereReceta(bool valor) { requiereReceta = valor; }
+
+    const char* tipo() const override
+    {
+        return "Medicamento";
+    }
+
+    void mostrar() const override
+    {
+        mostrarDatosBase();
+        cout << " | Vence: " << fechaVencimiento
+             << " | Receta: " << (requiereReceta ? "Si" : "No") << "\n";
+    }
+};
+
+class InsumoMedico : public Producto
+{
+private:
+    // Ejemplos: "Curacion", "Proteccion", "Inyectables"
+    char* categoria;
+    bool esteril;
+
+public:
+    InsumoMedico(const char* _codigo, const char* _nombre, double _precio, int _stock,
+                 const char* _categoria, bool _esteril)
+        : Producto(_codigo, _nombre, _precio, _stock)
+    {
+        copiarTexto(categoria, _categoria);
+        esteril = _esteril;
+    }
+
+    ~InsumoMedico() override
+    {
+        delete[] categoria;
+    }
+
+    const char* getCategoria() const { return categoria; }
+    bool esEsteril() const { return esteril; }
+
+    const char* tipo() const override
+    {
+        return "Insumo Medico";
+    }
+
+    void mostrar() const override
+    {
+        mostrarDatosBase();
+        cout << " | Categoria: " << categoria
+             << " | Esteril: " << (esteril ? "Si" : "No") << "\n";
+    }
+};
+
 //Clase Gestora de Archivos
 class GestorArchivo{
 public:
