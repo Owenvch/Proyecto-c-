@@ -279,7 +279,7 @@ public:
 class GestorArchivo{
 public:
     bool registrarUsuario(const char* usr, const char* pass){
-        ofstream archivo("Usuarios.csv",ios::app);
+        ofstream archivo("Usuarios.txt",ios::app);
         if (!archivo.is_open()){
             cout<<"Error, el archivo no se cargó correctamente"<<endl;
             return false;
@@ -401,10 +401,10 @@ int main()
             if (seguridad.registrarNuevo(inputMaestra, nuevoUser, nuevaPass))
             {
                 ui.mostrarMensaje("[!] Nuevo empleado registrado con exito en la base de datos temporal.");
-                // COMPROBACION DEL ARCHIVO CSV
-                ifstream archivo("Usuarios.csv");
+                // COMPROBACION DEL ARCHIVO txt
+                ifstream archivo("Usuarios.txt");
                 char caracter;
-                cout <<endl<<"--- CONTENIDO DE Usuarios.csv ---"<<endl;
+                cout <<endl<<"--- CONTENIDO DE Usuarios.txt ---"<<endl;
                 while (archivo.get(caracter)){
                     cout << caracter;
                 }
