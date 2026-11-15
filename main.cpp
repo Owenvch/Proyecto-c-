@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -94,6 +95,21 @@ public:
     }
 };
 
+//Clase Gestora de Archivos
+class GestorArchivo{
+public:
+    bool registrarUsuario(const char* usr, const char* pass){
+        ofstream archivo("Usuarios.csv",ios::app);
+        if (!archivo.is_open()){
+            cout<<"Error, el archivo no se cargó correctamente"<<endl;
+            return false;
+        }
+        archivo<<usr<<","<<pass<<endl;
+        archivo.close();
+        return archivo.good();
+    }
+};
+
 class SistemaLogin
 {
 private:
@@ -103,6 +119,7 @@ private:
 
     // ATRIBUTO PROTEGIDO: La clave maestra encapsulada(Para simular seguridad)
     const char* CLAVE_MAESTRA = "ADMIN123";
+    GestorArchivo gestor;
 
 public:
     SistemaLogin()
@@ -141,6 +158,7 @@ public:
             {
                 nomina[totalEmpleados] = new Empleado(nUser, nPass);
                 totalEmpleados++;
+                gestor.registrarUsuario(nUser,nPass);
                 return true;
             }
         }
@@ -203,6 +221,15 @@ int main()
             if (seguridad.registrarNuevo(inputMaestra, nuevoUser, nuevaPass))
             {
                 ui.mostrarMensaje("[!] Nuevo empleado registrado con exito en la base de datos temporal.");
+                // COMPROBACION DEL ARCHIVO CSV
+                ifstream archivo("Usuarios.csv");
+                char caracter;
+                cout <<endl<<"--- CONTENIDO DE Usuarios.csv ---"<<endl;
+                while (archivo.get(caracter)){
+                    cout << caracter;
+                }
+                archivo.close();
+                cout<<endl<<"---------------------------------"<<endl;
             }
             else
             {
