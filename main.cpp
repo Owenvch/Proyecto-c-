@@ -275,6 +275,154 @@ public:
     }
 };
 
+class ColeccionProductos{
+    private:
+    Producto** inventario;
+    int elemActuales;
+    int cantidad;
+    void redimensionar(){
+        int nuevaCantidad=cantidad*2;
+        Producto** nuevoInventario=new Producto*[nuevaCantidad];
+        for(int i=0;i<elemActuales;i++){
+            nuevoInventario[i]=inventario[i];
+        }
+        delete[] inventario;
+        inventario=nuevoInventario;
+        cantidad=nuevaCantidad;  
+    }
+    public:
+    ColeccionProductos(){
+        elemActuales=0;
+        cantidad=5;
+        inventario=new Producto*[cantidad];
+    }
+    void agregarProducto(Producto* nuevoProd){
+        if(elemActuales==cantidad){
+            redimensionar();
+        }
+        inventario[elemActuales]=nuevoProd;
+        elemActuales++;
+    }
+    ~ColeccionProductos(){
+        delete[] inventario;
+    }
+    int buscarProducto(const char* loteBuscado){
+        for(int i=0;i<elemActuales;i++){
+            if(sonIguales(inventario[i]->getCodigo(), loteBuscado)){
+                return i;
+            }
+        }
+        return -1; //producto no encontrado
+    }
+    void ordenarPorStock(){
+        for(int i=0;i<elemActuales-1;i++){
+            for(int j=0;j<elemActuales-i-1;j++){
+                if(inventario[j]->getStock()>inventario[j+1]->getStock()){
+                    Producto* temp=inventario[j];
+                    inventario[j]=inventario[j+1];
+                    inventario[j+1]=temp;
+                }
+            }
+        }
+    }
+    void mostrarInventario(){
+        for(int i=0;i<elemActuales;i++){
+            inventario[i]->mostrar();
+        }
+    }
+    int getElemActuales() {
+        return elemActuales;
+    }
+    Producto* obtenerProducto(int indice){
+        if(indice>=0 && indice<elemActuales){
+            return inventario[indice];
+        }
+        return nullptr; //indice fuera de rango.
+    }
+};
+class LineaDetalle{
+    private:
+    Producto* producto;
+    int cantidad;
+    public:
+    LineaDetalle(Producto* _producto, int _cantidad){
+        producto=_producto;
+        cantidad=_cantidad;
+        if(cantidad<=0){
+            cantidad=1; //cantidad minima de 1
+        }
+    }
+    double calcularSubtotal(){
+        return producto->getPrecio()*cantidad;
+    }
+    void mostrarLinea(){
+        cout<<"Producto: "<<producto->getNombre()<<" | Cantidad: "<<cantidad<<" | Subtotal: S/ "<<calcularSubtotal()<<endl;
+    }
+    Producto* getProducto(){
+        return producto;
+    }
+    int getCantidad(){
+        return cantidad;
+    }
+};
+class Pedido{
+    private:
+    char* codigoPedido;
+    LineaDetalle** detalles;
+    int numLineas;
+    int capacidad;
+    void redimensionar(){
+        int nuevaCapacidad=capacidad*2;
+        LineaDetalle** nuevoArreglo=new LineaDetalle*[nuevaCapacidad];
+        for(int i=0;i<numLineas;i++){
+            nuevoArreglo[i]=detalles[i];
+        }
+        delete[] detalles;
+        detalles=nuevoArreglo;
+        capacidad=nuevaCapacidad;
+    }
+    public:
+    Pedido(const char* _codigoPedido){
+        copiarTexto(codigoPedido, _codigoPedido);
+        numLineas=0;
+        capacidad=5;
+        detalles=new LineaDetalle*[capacidad];
+    }
+    ~Pedido(){
+        delete[] codigoPedido;
+        for(int i=0;i<numLineas;i++){
+            delete detalles[i];
+        }
+        delete[] detalles;
+    }
+    bool agregarLinea(Producto* producto, int cantidad){
+        if(!producto->retirarStock(cantidad)){
+            cout<<"Error: No hay suficiente stock para el producto "<<producto->getNombre()<<endl;
+            return false;
+        }
+        if(numLineas==capacidad){
+            redimensionar();
+        }
+        detalles[numLineas]=new LineaDetalle(producto, cantidad);
+        numLineas++;
+        return true;
+    }
+    double calcularTotal(){
+        double total=0;
+        for(int i=0;i<numLineas;i++){
+            total=total+detalles[i]->calcularSubtotal();
+        }
+        return total;
+    }
+    void mostrarPedido(){
+        cout<<"Codigo de Pedido: "<<codigoPedido<<endl;
+        cout<<"Detalles del Pedido:"<<endl;
+        for(int i=0;i<numLineas;i++){
+            detalles[i]->mostrarLinea();
+        }
+        cout<<"Total del pedido: S/ "<<calcularTotal()<<endl;
+    }
+};
 //Clase Gestora de Archivos
 class GestorArchivo{
 public:
