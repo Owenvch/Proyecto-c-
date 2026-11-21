@@ -275,11 +275,64 @@ public:
     }
 };
 
+//Clase Gestora de Archivos
+class GestorArchivo{
+public:
+    bool registrarUsuario(const char* usr, const char* pass){
+        ofstream archivo("Usuarios.txt",ios::app);
+        if (!archivo.is_open()){
+            cout<<"Error, el archivo no se cargó correctamente"<<endl;
+            return false;
+        }
+        archivo<<usr<<","<<pass<<endl;
+        archivo.close();
+        return archivo.good();
+    }
+    bool registrarProducto(const Medicamento* med){
+        ofstream archivo("Medicamentos.txt",ios::app);
+        if(!archivo.is_open()) {
+            cout<<"Error, el archivo no se cargó correctamente"<<endl;
+            return false;
+        }
+        archivo<<med->getCodigo()<<","<<med->getNombre()<<","<<med->getPrecio()<<","<<med->getStock()<<","<<med->getFechaVencimiento()<<","<<med->getRequiereReceta()<<endl;
+        archivo.close();
+        return archivo.good();
+    }
+    bool registrarProducto(const InsumoMedico* insM){
+        ofstream archivo("Insumos_Medicos.txt",ios::app);
+        if(!archivo.is_open()) {
+            cout<<"Error, el archivo no se cargó correctamente"<<endl;
+            return false;
+        }
+        archivo<<insM->getCodigo()<<","<<insM->getNombre()<<","<<insM->getPrecio()<<","<<insM->getStock()<<","<<insM->getCategoria()<<","<<insM->esEsteril()<<endl;
+        archivo.close();
+        return archivo.good();
+    }
+    
+    void mostrarArchivo(const char* nombreArchivo){
+        ifstream archivo(nombreArchivo);
+        if (!archivo.is_open())
+        {
+            cout<<"Error, no se pudo abrir el archivo: "<<nombreArchivo<<endl;
+            return;
+        }
+    char caracter;
+    cout<<endl<<"--- CONTENIDO DE "<< nombreArchivo<<" ---"<<endl;
+    while (archivo.get(caracter))
+    {
+        cout << caracter;
+    }
+    archivo.close();
+    cout<<endl<<"--------------------------------"<<endl;
+    }
+};
+
 class ColeccionProductos{
     private:
     Producto** inventario;
     int elemActuales;
     int cantidad;
+    GestorArchivo gestor;
     void redimensionar(){
         int nuevaCantidad=cantidad*2;
         Producto** nuevoInventario=new Producto*[nuevaCantidad];
@@ -296,14 +349,26 @@ class ColeccionProductos{
         cantidad=5;
         inventario=new Producto*[cantidad];
     }
-    void agregarProducto(Producto* nuevoProd){
+    void agregarProducto(Medicamento* med){
         if(elemActuales==cantidad){
             redimensionar();
         }
-        inventario[elemActuales]=nuevoProd;
+        inventario[elemActuales]=med;
         elemActuales++;
+        gestor.registrarProducto(med);
+    }
+    void agregarProducto(InsumoMedico* insM){
+        if(elemActuales==cantidad){
+            redimensionar();
+        }
+        inventario[elemActuales]=insM;
+        elemActuales++;
+        gestor.registrarProducto(insM);
     }
     ~ColeccionProductos(){
+        for (int i=0;i<elemActuales;i++){
+            delete inventario[i];
+        }
         delete[] inventario;
     }
     int buscarProducto(const char* loteBuscado){
@@ -423,20 +488,7 @@ class Pedido{
         cout<<"Total del pedido: S/ "<<calcularTotal()<<endl;
     }
 };
-//Clase Gestora de Archivos
-class GestorArchivo{
-public:
-    bool registrarUsuario(const char* usr, const char* pass){
-        ofstream archivo("Usuarios.txt",ios::app);
-        if (!archivo.is_open()){
-            cout<<"Error, el archivo no se cargó correctamente"<<endl;
-            return false;
-        }
-        archivo<<usr<<","<<pass<<endl;
-        archivo.close();
-        return archivo.good();
-    }
-};
+
 
 class SistemaLogin
 {
@@ -580,10 +632,42 @@ int main()
         cout << "  SISTEMA DE ALMACEN PRINCIPAL ACTIVO   \n";
         cout << "========================================\n";
         cout << "Bienvenido. El menu de 9 opciones de gestion va aqui - EN CONSTRUCCION wad.\n\n";
-
         // Aqui se instanciara la clase Almacen y se llamara a su menu.
-    }
+        
+    //-----------Codigo de prueba, lo eliminan despues-------------//
+        // Creamos la coleccion de productos
+    ColeccionProductos inventario;
 
+    // PRUEBA: REGISTRO DE UN MEDICAMENTO
+    Medicamento* med = new Medicamento(
+        "MED001",
+        "Paracetamol",
+        2.50,
+        100,
+        "2027-05-20",
+        false
+    );
+
+    // PRUEBA: REGISTRO DE UN INSUMO MEDICO
+    InsumoMedico* ins = new InsumoMedico(
+        "INS001",
+        "Guantes",
+        15.00,
+        50,
+        "Proteccion",
+        true
+    );
+    // Agregamos los productos a la coleccion
+    // Esto tambien ejecutara el registro en los archivos
+    inventario.agregarProducto(med);
+    inventario.agregarProducto(ins);
+
+    // COMPROBACION DE ARCHIVOS
+    GestorArchivo verificador;
+
+    verificador.mostrarArchivo("Usuarios.txt");
+    verificador.mostrarArchivo("Medicamentos.txt");
+    verificador.mostrarArchivo("Insumos_Medicos.txt");
+    }
     return 0;
 }
-
