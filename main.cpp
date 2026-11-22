@@ -42,6 +42,49 @@ bool sonIguales(const char* texto1, const char* texto2)
     return texto1[i] == texto2[i];
 }
 
+double convertirDecimal(const char* texto)
+{
+    double num = 0;
+    double decimal = 0;
+    double divisor = 1;
+    bool despuesPunto = false;
+
+    for (int i=0;texto[i]!='\0';i++)
+    {
+        if (texto[i]=='.')
+        {
+            despuesPunto=true;
+        }
+        else if (texto[i]>='0' && texto[i]<='9')
+        {
+            if (!despuesPunto)
+            {
+                num=num*10 +(texto[i] - '0');
+            }
+            else
+            {
+                divisor*=10;
+                decimal=decimal * 10 + (texto[i] - '0');
+            }
+        }
+    }
+
+    return (num+decimal)/divisor;
+}
+
+int convertirEntero(const char* texto)
+{
+    int num=0;
+    for (int i=0; texto[i]!='\0'; i++)
+    {
+        if (texto[i]>='0' && texto[i]<='9')
+        {
+            num=num*10 +(texto[i]-'0');
+        }
+    }
+    return num;
+}
+
 void imprimirTextoFijo(const char* texto, int ancho)
 {
     int len = obtenerLongitud(texto);
@@ -492,7 +535,67 @@ public:
         archivo.close();
         return true;
     }
+    
+    bool cargarUsuario(Empleado* nomina[], int& totalEmpleados, int limite)
+    {
+        ifstream archivo("Usuarios.txt");
+        if (!archivo.is_open())
+        {
+            return false;
+        }
+        char linea[110];
+        char usuario[50];
+        char password[50];
 
+        while (totalEmpleados < limite && archivo.getline(linea, 110))
+        {
+            int i = 0;
+            int j = 0;
+            while (linea[i] != ',' && linea[i] != '\0' && j < 49)
+            {
+                usuario[j++] = linea[i++];
+            }
+            usuario[j] = '\0';
+            
+            if (linea[i] != ',')
+            {
+                continue;
+            }
+            
+            i++;
+            j = 0;
+            while (linea[i] != '\0' && j < 49)
+            {
+                password[j++] = linea[i++];
+            }
+            
+            password[j] = '\0';
+            if (usuario[0] == '\0' || password[0] == '\0')
+            {
+                continue;
+            }
+            
+            bool existe = false;
+            for (int k = 0; k < totalEmpleados; k++)
+            {
+                if (sonIguales(nomina[k]->getUsuario(), usuario))
+                {
+                    existe = true;
+                    break;
+                }
+            }
+            
+            if (!existe)
+            {
+                nomina[totalEmpleados] = new Empleado(usuario, password);
+                totalEmpleados++;
+            }
+        }
+        archivo.close();
+        return true;
+    }
+
+    
     bool registrarProducto(const Medicamento* med)
     {
         ofstream archivo("Medicamentos.txt", ios::app);
@@ -553,6 +656,38 @@ public:
     //Eduardo lo q este comentado dentro de las clases es lo q falta para q completemos el proyecto pe
     //Implementar lectura de Usuarios.txt al iniciar el sistema
     //Implementar lectura de Medicamentos.txt e Insumos_Medicos.txt al iniciar
+    void cargarMedicamentos(char datos[][200], int& total)
+    {
+        ifstream archivo("Medicamentos.txt");
+        total = 0;
+        if (!archivo.is_open())
+        {
+            cout << "El archivo no se cargó correctamente";
+            return;
+        }
+        while (total < 100 && archivo.getline(datos[total], 200))
+        {
+            total++;
+        }
+        archivo.close();
+    }
+    
+    void cargarInsumos(char datos[][200], int& total)
+    {
+        ifstream archivo("Insumos_Medicos.txt");
+        total = 0;
+        if (!archivo.is_open())
+        {
+            cout << "El archivo no se cargó correctamente";
+            return;
+        }
+        while (total < 100 && archivo.getline(datos[total], 200))
+        {
+            total++;
+        }
+        archivo.close();
+    }
+
     //Implementar actualizacion/reescritura de archivos al editar o eliminar productos
 };
 
@@ -851,7 +986,7 @@ public:
         totalEmpleados = 0;
         nomina[totalEmpleados] = new Empleado("admin", "1234");
         totalEmpleados++;
-        //Llamar aqui a la carga de Usuarios.txt para poblar nomina[]
+        gestor.cargarUsuario(nomina, totalEmpleados, 10);
     }
 
     ~SistemaLogin()
@@ -904,11 +1039,84 @@ private:
 
     void cargarDatosIniciales()
     {
-        // Datos iniciales en RAM para probar sin duplicar .txt en cada ejecucion
-        // Reemplazar o complementar con la lectura de Medicamentos.txt e Insumos_Medicos.txt
-        inventario.agregarProducto(new Medicamento("MED001", "Paracetamol 500mg", 2.50, 100, "2027-05-20", false), false);
-        inventario.agregarProducto(new Medicamento("MED002", "Amoxicilina 500mg", 14.80, 8, "2027-03-10", true), false);
-        inventario.agregarProducto(new InsumoMedico("INS001", "Guantes Nitrilo", 15.00, 50, "Proteccion", true), false);
+        cargarMedArchivo();
+        cargarInsArchivo();
+    }
+    bool separarCampos(const char* linea, char campos[][100], int cantidadCampos)
+    {
+        int campoActual = 0;
+        int posicion = 0;
+        for (int i = 0; ; i++)
+        {
+            if (linea[i] == ',' || linea[i] == '\0')
+            {
+                campos[campoActual][posicion] = '\0';
+                campoActual++;
+                posicion = 0;
+                if (linea[i] == '\0')
+                {
+                    break;
+                }
+                if (campoActual >= cantidadCampos)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (posicion >= 99)
+                {
+                    return false;
+                }
+                campos[campoActual][posicion] = linea[i];
+                posicion++;
+            }
+        }
+    return campoActual == cantidadCampos;
+    }
+    
+    void cargarMedArchivo()
+    {
+        char datos[100][200];
+        int total = 0;
+        verificadorArchivos.cargarMedicamentos(datos, total);
+        for (int i = 0; i < total; i++)
+        {
+            char campos[6][100];
+            if (separarCampos(datos[i], campos, 6))
+            {
+                if (inventario.buscarProducto(campos[0]) == -1)
+                {
+                    double precio = convertirDecimal(campos[2]);
+                    int stock = convertirEntero(campos[3]);
+                    bool receta = convertirEntero(campos[5]) == 1;
+                    Medicamento* nuevo = new Medicamento(campos[0],campos[1],precio,stock,campos[4],receta);
+                    inventario.agregarProducto(nuevo, false);
+                }
+            }
+        }
+    }
+    
+    void cargarInsArchivo()
+    {
+        char datos[100][200];
+        int total = 0;
+        verificadorArchivos.cargarInsumos(datos, total);
+        for (int i = 0; i < total; i++)
+        {
+            char campos[6][100];
+            if (separarCampos(datos[i], campos, 6))
+            {
+                if (inventario.buscarProducto(campos[0]) == -1)
+                {
+                    double precio = convertirDecimal(campos[2]);
+                    int stock = convertirEntero(campos[3]);
+                    bool receta = convertirEntero(campos[5]) == 1;
+                    InsumoMedico* nuevo = new InsumoMedico(campos[0],campos[1],precio,stock,campos[4],receta);
+                    inventario.agregarProducto(nuevo, false);
+                }
+            }
+        }
     }
 
     void opcionBuscarProducto()
