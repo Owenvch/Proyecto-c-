@@ -69,7 +69,7 @@ double convertirDecimal(const char* texto)
         }
     }
 
-    return (num+decimal)/divisor;
+    return num + decimal/divisor;
 }
 
 int convertirEntero(const char* texto)
@@ -653,16 +653,13 @@ public:
         archivo.close();
         cout << "\n  ----------------------------------------\n";
     }
-    //Eduardo lo q este comentado dentro de las clases es lo q falta para q completemos el proyecto pe
-    //Implementar lectura de Usuarios.txt al iniciar el sistema
-    //Implementar lectura de Medicamentos.txt e Insumos_Medicos.txt al iniciar
-    void cargarMedicamentos(char datos[][200], int& total)
+    
+    void cargarProductos(const char* nombreArchivo, char datos[][200], int& total)
     {
-        ifstream archivo("Medicamentos.txt");
+        ifstream archivo(nombreArchivo);
         total = 0;
         if (!archivo.is_open())
         {
-            cout << "El archivo no se cargó correctamente";
             return;
         }
         while (total < 100 && archivo.getline(datos[total], 200))
@@ -672,23 +669,346 @@ public:
         archivo.close();
     }
     
-    void cargarInsumos(char datos[][200], int& total)
+    bool buscarProducto(const char* codigo, char datos[][100], int& tipoProducto)
     {
-        ifstream archivo("Insumos_Medicos.txt");
-        total = 0;
+        char linea[200];
+        char campos[6][100];
+        tipoProducto = 0;
+        
+        ifstream archivo("Medicamentos.txt");
+        if (archivo.is_open())
+        {
+            while (archivo.getline(linea, 200))
+            {
+                int i = 0;
+                int campo = 0;
+                for (int k = 0; ; k++)
+                {
+                    if (linea[k] == ',' || linea[k] == '\0')
+                    {
+                        campos[campo][i] = '\0';
+                        campo++;
+                        i = 0;
+                        if (linea[k] == '\0')
+                        {
+                            break;
+                        }
+                        if (campo >= 6)
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (i < 99 && campo < 6)
+                        {
+                            campos[campo][i] = linea[k];
+                            i++;
+                        }
+                    }
+                }
+                if (campo == 6 && sonIguales(campos[0], codigo))
+                {
+                    for (int x = 0; x < 6; x++)
+                    {
+                        int j = 0;
+                        while (campos[x][j] != '\0')
+                        {
+                            datos[x][j] = campos[x][j];
+                            j++;
+                        }
+                        datos[x][j] = '\0';
+                    }
+                    tipoProducto = 1;
+                    archivo.close();
+                    return true;
+                }
+            }
+            archivo.close();
+        }
+        
+        ifstream archivo2("Insumos_Medicos.txt");
+        if (archivo2.is_open())
+        {
+            while (archivo2.getline(linea, 200))
+            {
+                int j = 0;
+                int campo = 0;
+                for (int k = 0; ; k++)
+                {
+                    if (linea[k] == ',' || linea[k] == '\0')
+                    {
+                        campos[campo][j] = '\0';
+                        campo++;
+                        j = 0;
+                        if (linea[k] == '\0')
+                        {
+                            break;
+                        }
+                        if (campo >= 6)
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (j < 99 && campo < 6)
+                        {
+                            campos[campo][j] = linea[k];
+                            j++;
+                        }
+                    }
+                }
+                if (campo == 6 && sonIguales(campos[0], codigo))
+                {
+                    for (int x = 0; x < 6; x++)
+                    {
+                        int j = 0;
+                        while (campos[x][j] != '\0')
+                        {
+                            datos[x][j] = campos[x][j];
+                            j++;
+                        }
+                        datos[x][j] = '\0';
+                    }
+                    tipoProducto = 2;
+                    archivo2.close();
+                    return true;
+                }
+            }
+        archivo2.close();
+        }
+        return false;
+    }
+    
+    bool actualizarStock(const char* codigo, int nuevoStock)
+    {
+        char datos[6][100];
+        int tipoProducto;
+        if (nuevoStock < 0 || !buscarProducto(codigo, datos, tipoProducto))
+        {
+            return false;
+        }
+        char registros[100][200];
+        int total = 0;
+        const char* nombreArchivo;
+        if (tipoProducto == 1)
+        {
+            nombreArchivo = "Medicamentos.txt";
+        }
+        else
+        {
+            nombreArchivo = "Insumos_Medicos.txt";
+        }
+        
+        ifstream archivo(nombreArchivo);
         if (!archivo.is_open())
         {
-            cout << "El archivo no se cargó correctamente";
-            return;
+            return false;
         }
-        while (total < 100 && archivo.getline(datos[total], 200))
+        while (total < 100 && archivo.getline(registros[total], 200))
         {
             total++;
         }
+        if (total == 100)
+        {
+            char extra;
+            if (archivo.get(extra))
+            {
+                archivo.close();
+                return false;
+            }
+        }
         archivo.close();
+        
+        ofstream salida(nombreArchivo);
+        if (!salida.is_open())
+        {
+            return false;
+        }
+        for (int i = 0; i < total; i++)
+        {
+            char campos[6][100];
+            int campo = 0;
+            int j = 0;
+            for (int k = 0; ; k++)
+            {
+                if (registros[i][k] == ',' || registros[i][k] == '\0')
+                {
+                    campos[campo][j] = '\0';
+                    campo++;
+                    j = 0;
+                    if (registros[i][k] == '\0')
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    campos[campo][j] = registros[i][k];
+                    j++;
+                }
+            }
+            if (sonIguales(campos[0], codigo))
+            {
+                salida << campos[0] << "," << campos[1] << "," << campos[2] << "," << nuevoStock << "," << campos[4] << "," << campos[5] << "\n";
+            }
+            else
+            {
+                salida << registros[i] << "\n";
+            }
+        }
+        salida.close();
+        return true;
     }
-
-    //Implementar actualizacion/reescritura de archivos al editar o eliminar productos
+    
+    bool actualizarPrecio(const char* codigo, double nuevoPrecio)
+    {
+        char datos[6][100];
+        int tipoProducto;
+        if (nuevoPrecio < 0 || !buscarProducto(codigo, datos, tipoProducto))
+        {
+            return false;
+        }
+        char registros[100][200];
+        int total = 0;
+        const char* nombreArchivo;
+        if (tipoProducto == 1)
+        {
+            nombreArchivo = "Medicamentos.txt";
+        }
+        else
+        {
+            nombreArchivo = "Insumos_Medicos.txt";
+        }
+        ifstream archivo(nombreArchivo);
+        if (!archivo.is_open())
+        {
+            return false;
+        }
+        while (total < 100 && archivo.getline(registros[total], 200))
+        {
+            total++;
+        }
+        if (total == 100)
+        {
+            char extra;
+            if (archivo.get(extra))
+            {
+                archivo.close();
+                return false;
+            }
+        }
+        archivo.close();
+        
+        ofstream salida(nombreArchivo);
+        if (!salida.is_open())
+        {
+            return false;
+        }
+        for (int i = 0; i < total; i++)
+        {
+            char campos[6][100];
+            int campo = 0;
+            int j = 0;
+            for (int k = 0; ; k++)
+            {
+                if (registros[i][k] == ',' || registros[i][k] == '\0')
+                {
+                    campos[campo][j] = '\0';
+                    campo++;
+                    j = 0;
+                    if (registros[i][k] == '\0')
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    campos[campo][j] = registros[i][k];
+                    j++;
+                }
+            }
+            if (sonIguales(campos[0], codigo))
+            {
+                salida << campos[0] << "," << campos[1] << "," << nuevoPrecio << "," << campos[3] << "," << campos[4] << "," << campos[5] << "\n";
+            }
+            else
+            {
+                salida << registros[i] << "\n";
+            }
+        }
+        salida.close();
+        return true;
+    }
+    
+    bool eliminarProducto(const char* codigo)
+    {
+        char datos[6][100];
+        int tipoProducto;
+        if (!buscarProducto(codigo, datos, tipoProducto))
+        {
+            return false;
+        }
+        const char* nombreArchivo;
+        if (tipoProducto == 1)
+        {
+            nombreArchivo = "Medicamentos.txt";
+        }
+        else
+        {
+            nombreArchivo = "Insumos_Medicos.txt";
+        }
+        char registros[100][200];
+        int total = 0;
+        ifstream archivo(nombreArchivo);
+        if (!archivo.is_open())
+        {
+            return false;
+        }
+        while (total < 100 && archivo.getline(registros[total], 200))
+        {
+            total++;
+        }
+        if (total == 100)
+        {
+            char extra;
+            if (archivo.get(extra))
+            {
+                archivo.close();
+                return false;
+            }
+        }
+        archivo.close();
+        
+        ofstream salida(nombreArchivo);
+        if (!salida.is_open())
+        {
+            return false;
+        }
+        bool eliminado = false;
+        for (int i = 0; i < total; i++)
+        {
+            char codigoRegistro[100];
+            int j = 0;
+            while (registros[i][j] != ',' && registros[i][j] != '\0' && j < 99)
+            {
+                codigoRegistro[j] = registros[i][j];
+                j++;
+            }
+            codigoRegistro[j] = '\0';
+            if (sonIguales(codigoRegistro, codigo))
+            {
+                eliminado = true;
+            }
+            else
+            {
+                salida << registros[i] << "\n";
+            }
+        }
+        salida.close();
+        return eliminado && !salida.fail();
+    }
 };
 
 // ==========================================
@@ -1079,7 +1399,7 @@ private:
     {
         char datos[100][200];
         int total = 0;
-        verificadorArchivos.cargarMedicamentos(datos, total);
+        verificadorArchivos.cargarProductos("Medicamentos.txt",datos,total);
         for (int i = 0; i < total; i++)
         {
             char campos[6][100];
@@ -1101,7 +1421,7 @@ private:
     {
         char datos[100][200];
         int total = 0;
-        verificadorArchivos.cargarInsumos(datos, total);
+        verificadorArchivos.cargarProductos("Insumos_Medicos",datos,total);
         for (int i = 0; i < total; i++)
         {
             char campos[6][100];
@@ -1122,17 +1442,35 @@ private:
     void opcionBuscarProducto()
     {
         char codigo[20];
+        char datos[6][100];
+        int tipoProducto;
+        
         ui->limpiar();
         cout << "\n";
         ui->imprimirCentrado("=== BUSCAR PRODUCTO POR CODIGO ===", "\033[1;36m");
         ui->leerTexto("Ingrese el codigo del producto: ", codigo, 20);
-
-        int idx = inventario.buscarProducto(codigo);
-        if (idx != -1)
+        if (verificadorArchivos.buscarProducto(codigo, datos, tipoProducto))
         {
             cout << "\n";
-            inventario.obtenerProducto(idx)->mostrar();
-            ui->mostrarMensaje("[!] Producto encontrado.", "\033[1;32m");
+            ui->imprimirCentrado("=== PRODUCTO ENCONTRADO ===", "\033[1;32m");
+            cout << "\n";
+            cout << "  Codigo: " << datos[0] << "\n";
+            cout << "  Nombre: " << datos[1] << "\n";
+            cout << "  Precio: S/ " << datos[2] << "\n";
+            cout << "  Stock: " << datos[3] << "\n";
+            if (tipoProducto == 1)
+            {
+                cout << "  Tipo: Medicamento\n";
+                cout << "  Fecha de vencimiento: " << datos[4] << "\n";
+                cout << "  Requiere receta: "<< (convertirEntero(datos[5]) == 1 ? "Si" : "No") << "\n";
+            }
+            else if (tipoProducto == 2)
+            {
+                cout << "  Tipo: Insumo Medico\n";
+                cout << "  Categoria: " << datos[4] << "\n";
+                cout << "  Esteril: "<< (convertirEntero(datos[5]) == 1 ? "Si" : "No") << "\n";
+            }
+            ui->mostrarMensaje("[!] Producto encontrado correctamente.", "\033[1;32m");
         }
         else
         {
@@ -1203,44 +1541,52 @@ private:
         cout << "\n";
         ui->imprimirCentrado("=== ACTUALIZAR STOCK O PRECIO ===", "\033[1;36m");
         ui->leerTexto("Codigo del producto a modificar: ", codigo, 20);
-
         int idx = inventario.buscarProducto(codigo);
         if (idx == -1)
         {
             ui->mostrarMensaje("[x] Producto no encontrado.", "\033[1;31m");
             return;
         }
-
         Producto* p = inventario.obtenerProducto(idx);
         cout << "\n";
         p->mostrar();
         cout << "\n";
-
         int subOpcion = ui->leerEntero("1. Agregar Stock | 2. Cambiar Precio: ");
         if (subOpcion == 1)
         {
             int cantidad = ui->leerEntero("Unidades a ingresar al almacen: ");
-            if (p->agregarStock(cantidad))
+            if (cantidad <= 0)
             {
-                //Actualizar archivo tras modificar stock
+                ui->mostrarMensaje("[x] La cantidad debe ser mayor a 0.", "\033[1;31m");
+                return;
+            }
+            int nuevoStock = p->getStock() + cantidad;
+            if (verificadorArchivos.actualizarStock(codigo, nuevoStock))
+            {
+                p->agregarStock(cantidad);
                 ui->mostrarMensaje("[!] Stock actualizado correctamente.", "\033[1;32m");
             }
             else
             {
-                ui->mostrarMensaje("[x] La cantidad debe ser mayor a 0.", "\033[1;31m");
+                ui->mostrarMensaje("[x] No se pudo actualizar el stock.", "\033[1;31m");
             }
         }
         else if (subOpcion == 2)
         {
             double nuevoPrecio = ui->leerDecimal("Nuevo precio unitario (S/): ");
-            if (p->setPrecio(nuevoPrecio))
+            if (nuevoPrecio < 0)
             {
-                //Actualizar archivo tras modificar precio
+                ui->mostrarMensaje("[x] El precio no puede ser negativo.", "\033[1;31m");
+                return;
+            }
+            if (verificadorArchivos.actualizarPrecio(codigo, nuevoPrecio))
+            {
+                p->setPrecio(nuevoPrecio);
                 ui->mostrarMensaje("[!] Precio actualizado correctamente.", "\033[1;32m");
             }
             else
             {
-                ui->mostrarMensaje("[x] El precio no puede ser negativo.", "\033[1;31m");
+                ui->mostrarMensaje("[x] No se pudo actualizar el precio.", "\033[1;31m");
             }
         }
         else
@@ -1256,15 +1602,20 @@ private:
         cout << "\n";
         ui->imprimirCentrado("=== ELIMINAR PRODUCTO DEL ALMACEN ===", "\033[1;31m");
         ui->leerTexto("Ingrese el codigo del producto a eliminar: ", codigo, 20);
-
-        if (inventario.eliminarProducto(codigo))
+        int idx = inventario.buscarProducto(codigo);
+        if (idx == -1)
         {
-            //Actualizar archivo tras eliminar producto
-            ui->mostrarMensaje("[!] Producto eliminado y memoria liberada.", "\033[1;32m");
+            ui->mostrarMensaje("[x] Producto no encontrado.", "\033[1;31m");
+            return;
+        }
+        if (verificadorArchivos.eliminarProducto(codigo))
+        {
+            inventario.eliminarProducto(codigo);
+            ui->mostrarMensaje("[!] Producto eliminado del archivo y del inventario.", "\033[1;32m");
         }
         else
         {
-            ui->mostrarMensaje("[x] No se encontro ningun producto con ese codigo.", "\033[1;31m");
+            ui->mostrarMensaje("[x] No se pudo eliminar el producto del archivo.", "\033[1;31m");
         }
     }
 
