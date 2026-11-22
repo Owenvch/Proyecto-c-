@@ -1421,7 +1421,7 @@ private:
     {
         char datos[100][200];
         int total = 0;
-        verificadorArchivos.cargarProductos("Insumos_Medicos",datos,total);
+        verificadorArchivos.cargarProductos("Insumos_Medicos.txt",datos,total);
         for (int i = 0; i < total; i++)
         {
             char campos[6][100];
