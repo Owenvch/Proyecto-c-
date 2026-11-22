@@ -927,14 +927,32 @@ public:
         return modificarCampo(codigo, valor, 1);
     }
     
-    bool actualizarPrecio(const char* codigo, int nuevoPrecio)
+    bool actualizarPrecio(const char* codigo, double nuevoPrecio)
     {
         if (nuevoPrecio < 0)
         {
             return false;
-        }
-        char valor[20];
-        convertirTexto(nuevoPrecio, valor);
+            }
+            char valor[30];
+            int entero = (int)nuevoPrecio;
+            int centavos = (int)((nuevoPrecio - entero) * 100 + 0.5);
+            if (centavos == 100)
+            {
+                entero++;
+                centavos = 0;
+            }
+            convertirTexto(entero, valor);
+            int longitud = obtenerLongitud(valor);
+            valor[longitud] = '.';
+            if (centavos < 10)
+            {
+                valor[longitud + 1] = '0';
+                convertirTexto(centavos, valor + longitud + 2);
+            }
+            else
+            {
+                convertirTexto(centavos, valor + longitud + 1);
+            }
         return modificarCampo(codigo, valor, 2);
     }
     
